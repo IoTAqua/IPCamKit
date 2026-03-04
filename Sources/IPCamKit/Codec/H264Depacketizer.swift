@@ -399,7 +399,7 @@ struct H264Depacketizer: Sendable {
       while curPos < bytes.count {
         if c.trailingZeros == 0 {
           // Fast path: scan for zero byte
-          if let zeroIdx = bytes[curPos...].firstIndex(of: 0) {
+          if let zeroIdx = findZero(bytes, from: curPos) {
             curPos = zeroIdx + 1
             c.trailingZeros = 1
           } else {
@@ -589,6 +589,20 @@ struct H264Depacketizer: Sendable {
   }
 }
 
+// MARK: - Fast Zero-Byte Scan
+
+/// Find the index of the first zero byte in `bytes` starting from `from`,
+/// using `memchr` for O(1)-overhead scanning instead of Swift Collection protocol dispatch.
+private func findZero(_ bytes: [UInt8], from start: Int) -> Int? {
+  guard start < bytes.count else { return nil }
+  let len = bytes.count - start
+  return bytes.withContiguousStorageIfAvailable { buf -> Int? in
+    guard let base = buf.baseAddress else { return nil }
+    guard let found = memchr(base + start, 0, len) else { return nil }
+    return base.distance(to: found.assumingMemoryBound(to: UInt8.self))
+  } ?? nil
+}
+
 // MARK: - Annex B Processing
 
 /// Process data that may contain Annex B byte stream separators.
@@ -615,7 +629,7 @@ func processAnnexB(
   while i < bytes.count {
     if trailingZeros == 0 {
       // Fast path: scan for zero byte
-      if let zeroIdx = bytes[i...].firstIndex(of: 0) {
+      if let zeroIdx = findZero(bytes, from: i) {
         i = zeroIdx + 1
         trailingZeros = 1
       } else {
