@@ -347,8 +347,9 @@ actor SessionState {
         if sessionIdPolicy == .useFirst {
           // Ignore the new session ID
         } else {
-          throw RTSPError.sessionSetupFailed(
-            statusCode: 0, reason: "Session ID changed from \(sid) to \(audioSetup.session.id)")
+          print("RTSP Session ID changed from \(sid) to \(audioSetup.session.id) (accepting)")
+          // Accept the new session ID (important!)
+          sessionId = audioSetup.session.id
         }
       }
       audioSetupSSRC = audioSetup.ssrc
