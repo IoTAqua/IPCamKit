@@ -87,12 +87,6 @@ struct InorderParser: Sendable {
     if let expected = nextSeq {
       let delta = raw.sequenceNumber &- expected
       if delta > 0x8000 {
-        // Out of order
-        if isTcp {
-          throw RTSPError.depacketizationError(
-            "Out-of-order packet on TCP: seq=\(raw.sequenceNumber), expected=\(expected)")
-        }
-        // UDP: silently drop out-of-order packets
         return nil
       }
       loss = delta

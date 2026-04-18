@@ -514,6 +514,9 @@ actor SessionState {
             do {
               try depkt.push(pkt)
             } catch {
+              if String(describing: error).contains("Empty NAL") {
+                continue
+              }
               throw RTSPError.depacketizationError("Video push failed: \(error)")
             }
             while let result = depkt.pull() {
